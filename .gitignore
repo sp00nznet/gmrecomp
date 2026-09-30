@@ -1,0 +1,30 @@
+# --- Game data and anything derived from it: never committed (REPO_RULES section 3) ---
+*.win
+game/
+gen/
+generated/
+scratch/
+conformance/corpus.txt
+*.asm
+*.gml
+
+# --- Build output ---
+bin/
+build/
+obj/
+*.exe
+*.dll
+*.obj
+*.pdb
+*.ilk
+*.lib
+*.exp
+*.mp4
+gmrecomp.log
+
+# --- Editor / OS ---
+.vs/
+.vscode/
+__pycache__/
+Thumbs.db
+.DS_Store

@@ -1,0 +1,15 @@
+gmrecomp
+Copyright (c) 2026 sp00nz. MIT licensed, see LICENSE.
+
+Third-party code in this repository:
+
+runtime/third_party/imgui_backends/
+    Dear ImGui SDL2 platform and SDL_Renderer2 backends.
+    Copyright (c) 2014-2025 Omar Cornut. MIT licensed,
+    see runtime/third_party/imgui_backends/LICENSE.txt.
+
+Built against, not included: SDL2, SDL2_image, SDL2_mixer (zlib licence) and
+Dear ImGui (MIT), installed through vcpkg.
+
+The data.win format notes in docs/format.md follow the public documentation of
+the format kept by the UndertaleModTool project; no code was taken from it.

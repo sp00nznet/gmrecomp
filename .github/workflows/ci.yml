@@ -1,0 +1,24 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Python compiles
+        run: python -m py_compile tools/gmdata.py tools/gmdis.py tools/gmrecomp.py tools/conformance.py
+      - name: Conformance (skips without a corpus)
+        run: python tools/conformance.py
+      - name: vcpkg libraries
+        run: vcpkg install sdl2 sdl2-image sdl2-mixer imgui --triplet x64-windows
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile runtime
+        shell: cmd
+        run: |
+          set VI=%VCPKG_INSTALLATION_ROOT%\installed\x64-windows
+          cl /nologo /c /W3 /wd4996 /std:c11 /MD /I runtime /I "%VI%\include\SDL2" /I "%VI%\include" runtime\gm_core.c runtime\gm_funcs.c runtime\gm_host.c runtime\devmenu_stub.c
+          cl /nologo /c /W3 /wd4996 /EHsc /MD /I runtime /I "%VI%\include\SDL2" /I "%VI%\include" /I runtime\third_party\imgui_backends runtime\devmenu.cpp runtime\profile_none.cpp
