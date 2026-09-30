@@ -6,6 +6,12 @@ versions: [SemVer](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Mouse: a click taps the key of the key-listening instance under the cursor (outer thirds of a
+  Left/Right selector give Left/Right), otherwise Enter or Esc. `mouse_x`/`mouse_y` builtins.
+- Profile hooks `profile_click` and `profile_key` (see keys and clicks first) and
+  `host_key_seq` for timed key macros.
+
+### Added
 - `tools/gmdata.py`: data.win reader for bytecode 15 (GameMaker: Studio 1.4): code, variables,
   functions with their reference chains, objects and events, rooms, sprites and masks, texture
   pages, fonts, sounds.

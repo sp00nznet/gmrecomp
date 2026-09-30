@@ -54,6 +54,8 @@ void profile_menu(void);                // ImGui items in that menu
 void profile_windows(void);             // extra windows
 void profile_before_step(void);         // every step, before gm_frame
 void profile_after_step(void);
+bool profile_click(double x, double y, int button, int key);  // clicks first
+bool profile_key(int vk, bool down);                          // keys first
 ```
 
 and builds with `tools/build.ps1 -Extra <profile dir>`. Helpers:
@@ -66,6 +68,7 @@ and builds with `tools/build.ps1 -Extra <profile dir>`. Helpers:
 | `dev_luck_value(code, dir)` | force the largest (+1) or smallest (-1) value |
 | `dev_sites(code, target, out, max)`, `dev_force`, `dev_force_value` | the same, for one variable's sites |
 | `gm_premove_hook` | runs after Step events and before speeds move instances |
+| `host_key_seq(vk, delay, hold)` | press a key for the game after `delay` steps, for `hold` steps |
 
 Urban Pirate's profile (`urbanpirate/profile/profile_up.cpp`) is the worked
 example: stat editors with locks, luck presets built from outcome labels,

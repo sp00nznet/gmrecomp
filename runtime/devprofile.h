@@ -13,6 +13,13 @@ void profile_menu(void);                /* ImGui items inside that menu */
 void profile_windows(void);             /* extra ImGui windows, every frame */
 void profile_before_step(void);         /* runs before every game step */
 void profile_after_step(void);          /* runs after every game step */
+/* A click (room coords, SDL_BUTTON_*). key is the key the toolkit would tap
+ * for it (the clicked instance's key, 0 if none; then it becomes Enter/Esc).
+ * Return true to handle it yourself. */
+bool profile_click(double x, double y, int button, int key);
+/* A keyboard or gamepad key before the game sees it; true = swallow it.
+ * host_key_seq() can then press keys on the game's behalf. */
+bool profile_key(int vk, bool down);
 }
 
 /* helpers (devmenu.cpp) */

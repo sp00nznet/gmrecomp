@@ -63,6 +63,24 @@ once. Legacy `sound_loop` / `action_sound` restart a sound instead of layering
 it. `audio_sound_gain` fades per step. Volume is the sound's own volume ×
 gain × the menu's effects or music slider.
 
+## Mouse
+
+GMS 1.4 games often have no mouse code: their buttons are objects that listen
+for a key. So a left click finds the topmost visible instance under the cursor
+whose object has KeyPress/KeyRelease events, tested against the bounding box
+rather than the precise mask (a text button's mask covers only its letters),
+and taps that key:
+
+- an object that takes both Left and Right (a `< option >` selector) gets
+  Left or Right from a click in its outer thirds, and Up/Down likewise;
+- otherwise Enter if it takes Enter, then Space, then its first key.
+
+The profile sees every click first (`profile_click`, with the key the toolkit
+would tap). A click that nothing claims becomes Enter (left) or Esc (right).
+`mouse_x` / `mouse_y` hold the cursor in room coordinates. Taps and profile
+macros go through `host_key_seq(vk, delay, hold)`, and keyboard and gamepad
+keys pass through `profile_key` before the game sees them.
+
 ## Saves
 
 `game_save` / `game_load` and the dev menu's savestates share one format

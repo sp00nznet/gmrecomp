@@ -25,6 +25,7 @@ Val *gm_globals;
 Inst **gm_insts; int gm_ninsts; static int cap_insts;
 int gm_room = -1, gm_room_pending = -1, gm_room_speed = 30;
 bool gm_quit;
+double gm_mouse_x, gm_mouse_y;
 void (*gm_premove_hook)(void);
 static int next_id = 100001;
 static double g_score, g_lives = -1, g_health = 100;
@@ -194,6 +195,7 @@ static Val bi_get(Inst *i, int b, int idx) {
     case B_ROOM: return R(gm_room); case B_ROOM_SPEED: return R(gm_room_speed);
     case B_ROOM_WIDTH: return R(gm_rooms[gm_room].w); case B_ROOM_HEIGHT: return R(gm_rooms[gm_room].h);
     case B_INSTANCE_COUNT: { int c = 0; for (int k = 0; k < gm_ninsts; k++) c += !gm_insts[k]->dead && gm_insts[k]->active; return R(c); }
+    case B_MOUSE_X: return R(gm_mouse_x); case B_MOUSE_Y: return R(gm_mouse_y);
     case B_CURRENT_TIME: return R((double)clock() * 1000 / CLOCKS_PER_SEC);
     case B_FPS: return R(gm_room_speed);
     case B_BBOX_LEFT: case B_BBOX_RIGHT: case B_BBOX_TOP: case B_BBOX_BOTTOM: {
@@ -476,6 +478,14 @@ static bool mask_bit(Inst *i, double px, double py) {
     int stride = (sp->w + 7) / 8;
     const uint8_t *m = host_data(gm_sprite_mask_off[s]) + (size_t)f * stride * sp->h;
     return (m[iy * stride + ix / 8] >> (7 - (ix & 7))) & 1;
+}
+
+void gm_bbox(Inst *i, double *l, double *t, double *r, double *b) { bbox(i, l, t, r, b); }
+
+bool gm_point_in(Inst *i, double x, double y) {
+    if (i->dead || !i->active || (i->sprite < 0 && i->mask < 0)) return false;
+    double l, t, r, b; bbox(i, &l, &t, &r, &b);
+    return x >= l && x < r && y >= t && y < b && mask_bit(i, x, y);
 }
 
 /* ponytail: bbox + precise masks, image_angle ignored; add rotation if a game spins colliders */

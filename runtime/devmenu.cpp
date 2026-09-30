@@ -197,6 +197,8 @@ void dev_before_step(void) {
 }
 
 void dev_after_step(void) { profile_after_step(); }
+bool dev_click(double x, double y, int button, int key) { return profile_click(x, y, button, key); }
+bool dev_key(int vk, bool down) { return profile_key(vk, down); }
 
 /* ---------------- overlay ---------------- */
 

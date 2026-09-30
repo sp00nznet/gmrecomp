@@ -116,6 +116,9 @@ void gm_event(Inst *i, int type, int sub, Inst *other);
 bool gm_has_event(int obj, int type, int sub);
 bool gm_is(Inst *i, int target);            /* does instance i match object/id target */
 bool gm_collide(Inst *a, double ax, double ay, Inst *b);
+bool gm_point_in(Inst *i, double x, double y);
+void gm_bbox(Inst *i, double *l, double *t, double *r, double *b);  /* needs a sprite or mask */   /* point inside bbox and precise mask */
+extern double gm_mouse_x, gm_mouse_y;            /* room coordinates */
 void gm_init(void);
 extern void (*gm_premove_hook)(void);      /* after Step events, before speeds move instances */
 void gm_frame(void);                        /* one game step (no drawing) */

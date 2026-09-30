@@ -286,6 +286,85 @@ void host_default_bindings(void) {
     for (int k = 0; k < 256; k++) host.key_map[k] = 0;
 }
 
+/* ---------------- mouse ----------------
+ * GMS 1.4 games often have no mouse code at all: their buttons are objects
+ * that listen for a key. A left click taps the key of the topmost visible
+ * instance under the cursor that has KeyPress/KeyRelease events; a button
+ * that takes Left and Right (a "< option >" selector) gets Left or Right from
+ * its outer thirds. A click nothing claims goes to the profile (dev_click),
+ * then becomes Enter (left) or Esc (right). docs/runtime.md, "Mouse". */
+
+/* timed key presses: clicks, and profile macros (host_key_seq) */
+typedef struct { int vk, at, hold; } Seq;
+static Seq seqs[64]; static int nseqs;
+void host_key_seq(int vk, int delay, int hold) {
+    if (vk <= 0 || vk > 255 || nseqs == 64) return;
+    seqs[nseqs++] = (Seq){ vk, delay, hold < 1 ? 1 : hold };
+    if (delay == 0) { host_vk(vk, true); seqs[nseqs - 1].at = -1; }
+}
+static void tap(int vk) { host_key_seq(vk, 0, 3); }
+static void seq_step(void) {
+    for (int k = 0; k < nseqs; k++) {
+        Seq *q = &seqs[k];
+        if (q->at > 0 && --q->at == 0) { host_vk(q->vk, true); q->at = -1; continue; }
+        if (q->at < 0 && --q->hold == 0) { host_vk(q->vk, false); seqs[k--] = seqs[--nseqs]; }
+    }
+}
+
+static int obj_keys(int obj, bool *keys) {
+    int n = 0;
+    for (int o = obj; o >= 0; o = gm_objects[o].parent)
+        for (int e = 0; e < gm_objects[o].nev; e++) {
+            const GMEvent *ev = &gm_events[gm_objects[o].ev0 + e];
+            if ((ev->type == EV_KEYPRESS || ev->type == EV_KEYRELEASE) && ev->sub > 1 && ev->sub < 256 && !keys[ev->sub]) {
+                keys[ev->sub] = true; n++;
+            }
+        }
+    return n;
+}
+
+int host_click_key(double x, double y) {
+    Inst *best = NULL;
+    for (int k = 0; k < gm_ninsts; k++) {
+        Inst *i = gm_insts[k];
+        /* the box, not the precise mask: a text button's mask is only its letters */
+        if (i->dead || !i->active || !i->visible || (i->sprite < 0 && i->mask < 0)) continue;
+        bool keys[256] = { 0 };
+        if (!obj_keys(i->obj, keys)) continue;
+        double l, t, r, b; gm_bbox(i, &l, &t, &r, &b);
+        if (x < l || x >= r || y < t || y >= b) continue;
+        if (!best || i->depth < best->depth || (i->depth == best->depth && i->id > best->id)) best = i;
+    }
+    if (!best) return 0;
+    bool keys[256] = { 0 };
+    int n = obj_keys(best->obj, keys);
+    double l, t, r, b; gm_bbox(best, &l, &t, &r, &b);
+    if (keys[37] && keys[39] && r > l) { double f = (x - l) / (r - l); if (f < 1.0 / 3) return 37; if (f > 2.0 / 3) return 39; }
+    if (keys[38] && keys[40] && b > t) { double f = (y - t) / (b - t); if (f < 1.0 / 3) return 38; if (f > 2.0 / 3) return 40; }
+    if (keys[13]) return 13;
+    if (keys[32]) return 32;
+    for (int k = 0; k < 256; k++) if (keys[k] && n) return k;
+    return 0;
+}
+
+void host_click(double x, double y, int button) {
+    int k = button == SDL_BUTTON_LEFT ? host_click_key(x, y) : 0;
+    if (dev_click(x, y, button, k)) return;
+    if (k) { tap(k); return; }
+    tap(button == SDL_BUTTON_LEFT ? 13 : button == SDL_BUTTON_RIGHT ? 27 : 0);
+}
+
+static SDL_Rect game_dst;               /* where the game frame sits in the window */
+static bool to_room(int wx, int wy, double *x, double *y) {
+    int ww, wh, ow = 0, oh = 0; SDL_GetWindowSize(win, &ww, &wh);
+    if (!screen) SDL_GetRendererOutputSize(ren, &ow, &oh);
+    double sx = ow && ww ? (double)ow / ww : 1, sy = oh && wh ? (double)oh / wh : 1;
+    if (!game_dst.w || !game_dst.h) return false;
+    *x = (wx * sx - game_dst.x) * gm_window_w / game_dst.w;
+    *y = (wy * sy - game_dst.y) * gm_window_h / game_dst.h;
+    return *x >= 0 && *y >= 0 && *x < gm_window_w && *y < gm_window_h;
+}
+
 /* ---------------- config ---------------- */
 
 static const char *cfg_path(void) {
@@ -397,6 +476,7 @@ int main(int argc, char **argv) {
     if (!ren) { fprintf(stderr, "renderer: %s\n", SDL_GetError()); return 1; }
     target = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, gm_window_w, gm_window_h);
     pages = calloc(gm_ntextures + 1, sizeof *pages);
+    game_dst = (SDL_Rect){ 0, menu_h, gm_window_w * host.scale, gm_window_h * host.scale };
     if (menu) dev_init(win, ren);
     cap_w = gm_window_w; cap_h = gm_window_h;
     if (headless && ui) {
@@ -431,7 +511,7 @@ int main(int argc, char **argv) {
                 if (ev.key.repeat) break;
                 int vk = host_vk_from_sdl(ev.key.keysym.sym);
                 if (vk && host.key_map[vk]) vk = host.key_map[vk];
-                host_vk(vk, ev.type == SDL_KEYDOWN);
+                if (!dev_key(vk, ev.type == SDL_KEYDOWN)) host_vk(vk, ev.type == SDL_KEYDOWN);
                 break;
             }
             case SDL_CONTROLLERDEVICEADDED: if (!pad) pad = SDL_GameControllerOpen(ev.cdevice.which); break;
@@ -439,10 +519,18 @@ int main(int argc, char **argv) {
                 if (pad && ev.cdevice.which == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad))) { SDL_GameControllerClose(pad); pad = NULL; }
                 break;
             case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
-                if (ev.cbutton.button < SDL_CONTROLLER_BUTTON_MAX)
-                    host_vk(host.pad_map[ev.cbutton.button], ev.type == SDL_CONTROLLERBUTTONDOWN);
+                if (ev.cbutton.button < SDL_CONTROLLER_BUTTON_MAX) {
+                    int vk = host.pad_map[ev.cbutton.button]; bool dn = ev.type == SDL_CONTROLLERBUTTONDOWN;
+                    if (!dev_key(vk, dn)) host_vk(vk, dn);
+                }
                 break;
             case SDL_CONTROLLERAXISMOTION: pad_axis(ev.caxis.axis, ev.caxis.value); break;
+            case SDL_MOUSEMOTION: { double x, y; if (to_room(ev.motion.x, ev.motion.y, &x, &y)) { gm_mouse_x = x; gm_mouse_y = y; } break; }
+            case SDL_MOUSEBUTTONDOWN: {
+                double x, y;
+                if (to_room(ev.button.x, ev.button.y, &x, &y)) { gm_mouse_x = x; gm_mouse_y = y; host_click(x, y, ev.button.button); }
+                break;
+            }
             }
         }
 
@@ -474,6 +562,7 @@ int main(int argc, char **argv) {
                 }
                 SDL_PushEvent(&e);
             }
+            seq_step();
             dev_before_step();
             gm_frame();
             dev_after_step();
@@ -499,6 +588,7 @@ int main(int argc, char **argv) {
             double sc = fmin((double)w / gm_window_w, (double)(h - mh) / gm_window_h);
             SDL_Rect d = { (int)((w - gm_window_w * sc) / 2), mh + (int)((h - mh - gm_window_h * sc) / 2),
                            (int)(gm_window_w * sc), (int)(gm_window_h * sc) };
+            game_dst = d;
             SDL_SetTextureScaleMode(target, host.smooth ? SDL_ScaleModeLinear : SDL_ScaleModeNearest);
             SDL_RenderCopy(ren, target, NULL, &d);
             dev_frame();

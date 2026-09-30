@@ -107,7 +107,7 @@ SimCity 2000 frontends:
 | Game | Pause (F8), frame step (F9), speed 0.25x-8x, hold Tab for 4x, restart room, go to any room. |
 | *(game)* | The game repo's own cheats (its profile). |
 | Luck | Every `choose()` in the game, labelled with what each outcome creates, forced or left random. |
-| Controls | Extra keys for any game key, gamepad mapping (left stick works as the d-pad). |
+| Controls | Extra keys for any game key, gamepad mapping (left stick works as the d-pad). The mouse clicks the game's own buttons (each becomes its key), otherwise Enter / Esc. |
 | Graphics / Audio | Window scale, smoothing, fullscreen; effects and music volume, mute. |
 | Debug | Every global (edit, freeze), every instance (inspect, edit, destroy), collision boxes. |
 
