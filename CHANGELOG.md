@@ -6,12 +6,17 @@ versions: [SemVer](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- Mouse: a click taps the key of the key-listening instance under the cursor (outer thirds of a
+- Mouse (reviewed as PR #1 in the first, private copy of this repo, which was recreated before
+  going public to drop game-derived doc excerpts from history): a click taps the key of the key-listening instance under the cursor (outer thirds of a
   Left/Right selector give Left/Right), otherwise Enter or Esc. `mouse_x`/`mouse_y` builtins.
 - Profile hooks `profile_click` and `profile_key` (see keys and clicks first) and
   `host_key_seq` for timed key macros.
 
+### Changed
+- `docs/recompiler.md` examples are hand-written instead of excerpts of a game's output.
+
 ### Added
+- `CONTRIBUTING.md`, with "Where your code comes from" (no UndertaleModTool / GPL code).
 - `tools/gmdata.py`: data.win reader for bytecode 15 (GameMaker: Studio 1.4): code, variables,
   functions with their reference chains, objects and events, rooms, sprites and masks, texture
   pages, fonts, sounds.
